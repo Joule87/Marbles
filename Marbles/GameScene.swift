@@ -16,9 +16,11 @@ class GameScene: SKScene {
     
     var balls = ["ballBlue", "ballCyan", "ballGreen", "ballGrey", "ballPurple", "ballRed", "ballYellow"]
     var motionManager: CMMotionManager?
-    var scoreLabel = SKLabelNode(fontNamed: "Hervetica-Thin")
+    var scoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    var counterLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
-    var matchedBalls = Set<Ball>()
+    private var timer = Timer()
+    private var matchedBalls = Set<Ball>()
     
     var score = 0 {
         didSet {
@@ -29,7 +31,49 @@ class GameScene: SKScene {
         }
     }
     
+    var gameTime = 60 {
+        didSet {
+            counterLabel.text = ":\(gameTime)"
+            isTimeOver()
+        }
+    }
+    
     override func didMove(to view: SKView) {
+        setBackground()
+        setCounterLabel()
+        setScoreLabel()
+        layoutBalls(view)
+        
+        physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: 75, left: 0, bottom: 0, right: 0)))
+        motionManager = CMMotionManager()
+        motionManager?.startAccelerometerUpdates()
+        
+        setupTimer()
+    }
+    
+    private func isTimeOver() {
+        if gameTime == 0 {
+            timer.invalidate()
+            saveScore()
+            goMenuScene()
+        }
+    }
+    
+    private func setCounterLabel() {
+        counterLabel.fontSize = 40
+        counterLabel.position = CGPoint(x: frame.maxX - 80, y: 20)
+        counterLabel.text = ":60"
+        counterLabel.zPosition = 100
+        counterLabel.horizontalAlignmentMode = .left
+        addChild(counterLabel)
+        
+        let scaleUP = SKAction.scale(to: 1.2, duration: 1)
+        let scaleDown = SKAction.scale(to: 1, duration: 1)
+        let secuence = SKAction.sequence([scaleUP,scaleDown])
+        counterLabel.run(SKAction.repeatForever(secuence))
+    }
+    
+    private func setBackground() {
         let background = SKSpriteNode(imageNamed: "checkerboard")
         background.position = CGPoint(x: frame.midX, y: frame.midY)
         background.alpha = 0.2
@@ -37,15 +81,18 @@ class GameScene: SKScene {
         background.zPosition = -1
         addChild(background)
         background.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat.pi, duration: 15)))
-        
-        scoreLabel.fontSize = 45
+    }
+    
+    private func setScoreLabel() {
+        scoreLabel.fontSize = 35
         scoreLabel.position = CGPoint(x: 20, y: 20)
         scoreLabel.text = "SCORE: 0"
         scoreLabel.zPosition = 100
         scoreLabel.horizontalAlignmentMode = .left
         addChild(scoreLabel)
-        
-        
+    }
+    
+    fileprivate func layoutBalls(_ view: SKView) {
         let ball = SKSpriteNode(imageNamed: "ballBlue")
         let ballRadius = ball.frame.width / 2
         
@@ -65,10 +112,12 @@ class GameScene: SKScene {
                 
             }
         }
-        
-        physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: 75, left: 0, bottom: 0, right: 0)))
-        motionManager = CMMotionManager()
-        motionManager?.startAccelerometerUpdates()
+    }
+    
+    private func setupTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { (timer) in
+            self.gameTime = self.gameTime - 1
+        }
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -129,12 +178,34 @@ class GameScene: SKScene {
         
         if isEndGame() {
             print("GAME OVER")
+            saveScore()
+            goMenuScene()
         }
         
     }
     
-    func isEndGame() -> Bool {
+    private func saveScore() {
+        guard var scores = UserDefaults.standard.array(forKey: "scores") as? [Int] else {
+            return
+        }
+        scores.append(score)
+        let sortedScores = scores.sorted{ $0 > $1 }
+        let scoresResult = Array(sortedScores.dropLast())
+        UserDefaults.standard.set(scoresResult, forKey: "scores")
+        
+    }
+    
+    private func goMenuScene() {
+        guard let view = view else {
+            return
+        }
+        let menuScene = MenuScene(size: view.bounds.size)
+        view.presentScene(menuScene)
+    }
+    
+    private func isEndGame() -> Bool {
         let balls = children.filter({ $0 is Ball}).map({$0 as! Ball})
+        
         for ball in balls {
             let equalBallType = balls.filter({$0.name == ball.name})
             if equalBallType.count >= 3 {
