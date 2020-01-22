@@ -92,7 +92,7 @@ class GameScene: SKScene {
         addChild(scoreLabel)
     }
     
-    fileprivate func layoutBalls(_ view: SKView) {
+    private func layoutBalls(_ view: SKView) {
         let ball = SKSpriteNode(imageNamed: "ballBlue")
         let ballRadius = ball.frame.width / 2
         
@@ -109,7 +109,6 @@ class GameScene: SKScene {
                 ball.physicsBody?.allowsRotation = false
                 ball.physicsBody?.restitution = 0
                 ball.physicsBody?.friction = 0
-                
             }
         }
     }
@@ -179,6 +178,7 @@ class GameScene: SKScene {
         if isEndGame() {
             print("GAME OVER")
             saveScore()
+            timer.invalidate()
             goMenuScene()
         }
         
