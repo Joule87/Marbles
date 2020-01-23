@@ -43,12 +43,18 @@ class GameScene: SKScene {
         setCounterLabel()
         setScoreLabel()
         layoutBalls(view)
-        
-        physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: 75, left: 0, bottom: 0, right: 0)))
+        setMotionManager()
+        setWorldPhysics()
+        setupTimer()
+    }
+    
+    private func setMotionManager() {
         motionManager = CMMotionManager()
         motionManager?.startAccelerometerUpdates()
-        
-        setupTimer()
+    }
+    
+    private func setWorldPhysics() {
+        physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: 75, left: 0, bottom: 0, right: 0)))
     }
     
     private func isTimeOver() {
